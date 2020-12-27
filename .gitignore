@@ -1,0 +1,7 @@
+.DS_Store
+
+# files for testing
+Makefile
+*.dSYM
+*.cpp
+InfList
