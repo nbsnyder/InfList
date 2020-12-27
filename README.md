@@ -1,11 +1,10 @@
 # InfList
 
-Infinite List Library for C++
-Written by Nathan Snyder
+An infinite List Library for C++. Written by Nathan Snyder.
 
 ## Install and use
 
-Download InfList.h to your build tree. Make sure to use a C++17 compiler or later.
+Download InfList.h and place it in your build tree. The InfList library uses C++17 features, so make sure to compile your project with a C++17 compiler or newer.
 
 ## Usage examples
 
@@ -14,18 +13,25 @@ Download InfList.h to your build tree. Make sure to use a C++17 compiler or late
 #### Code
 
 ```C++
+// Calculate the definite integral of a function using various step sizes
 #include "InfList.h"
 
-double y(double x) { return (2 * x * x) - (3 * x) + 7; }
+double y(double x) {
+    return (2.0 * x * x) - (3.0 * x) + 7.0;
+}
 
-InfList<double> yIntegral(&y);
+int main() {
+    // Creates an infinite list with the y function
+    InfList<double> yIntegral(&y);
 
-std::cout << "Definite integral of y=2x^2-3x+7 in the range [0, 10] by step size:\n";
-for (double i = 1.0; i >= 0.000001; i /= 10)
-    std::cout << i << " --> " << i * yIntegral.sumRange(0, 10, i) << "\n";
+    std::cout << "Definite integral of y=2x^2-3x+7 in the range [0, 10] by step size:\n";
+    for (double i = 1.0; i >= 0.000001; i /= 10)
+        // adds the entries in the list from 0 to 10 with step size i
+        std::cout << i << " --> " << i * yIntegral.sumRange(0, 10, i) << "\n";
+
+    return 0;
+}
 ```
-
----
 
 #### Output
 
@@ -41,27 +47,36 @@ Definite integral of y=2x^2-3x+7 in the range [0, 10] by step size:
 ```
 
 
+---
 
-### Calculating constants (like pi) using infinite series
+
+### Calculating numbers to various precisions using infinite series
 
 #### Code
 
 ```C++
+// Calculate pi to various precisions using the Leibniz series
 #include "InfList.h"
 
-// Calculate pi using the Leibniz series
-double leibnizSeries(double a) {
-    return 4 * ((((int) a) % 2) ? -1.0 : 1.0) / ((2.0 * a) + 1.0);
+// Function that calculates the nth term in the Leibniz series
+// The sum of all the terms in the Leibniz series add up to pi/4
+double leibnizSeries(double n) {
+    return ((int) n % 2 ? -1.0 : 1.0) / ((2.0 * n) + 1.0);
 }
 
-InfList<double> calc_pi(&leibnizSeries);
+int main() {
+    // Creates an infinite list with the leibnizSeries function
+    // The list starts from 0 and has a step size of 1
+    InfList<double> calc_pi_over_4(&leibnizSeries, 0, 1);
 
-std::cout << "Value of the sum of the Leibniz series by number of terms:\n";
-for (double i = 1.0; i <= 1000000.0; i *= 10)
-    std::cout << i << " --> " << calc_pi.sumFirst(i) << "\n";
+    std::cout << "Value of the sum of the Leibniz series by number of terms:\n";
+    for (double i = 1.0; i <= 1000000.0; i *= 10)
+        // Adds the first i entries in the list
+        std::cout << i << " --> " << 4 * calc_pi_over_4.sumFirst(i) << "\n";
+
+    return 0;
+}
 ```
-
----
 
 #### Output
 
