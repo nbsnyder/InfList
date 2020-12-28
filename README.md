@@ -6,6 +6,12 @@ An infinite list library for C++. Written by Nathan Snyder.
 
 Download InfList.h and place it in your build tree. The InfList library uses C++17 features, so make sure to compile your project with a C++17-compatible compiler or newer.
 
+
+
+---
+
+
+
 ## Usage Examples
 
 ### Computing Numbers to Various Precisions Using Infinite Series
@@ -51,10 +57,6 @@ Value of the sum of the Leibniz series by number of terms:
 
 
 
----
-
-
-
 ### Calculating Definite Integrals
 
 #### Code
@@ -95,10 +97,6 @@ Definite integral of y=2x^2-3x+7 in the range [0, 10] by step size:
 
 
 
----
-
-
-
 ### Perform Operations on Every List Element
 
 #### Code
@@ -110,16 +108,19 @@ int initialFunc(int x) { return (9 * x) + 2; }
 int magicFunc(int x) { return x * (x - 1); }
 
 int main() {
-    InfList<int> test(&initialFunc);
+    // Create an infinite list with with the initialFunc function
+    InfList<int> test1(&initialFunc);
 
     // Apply magicFunc to every element in the list
-    test.apply(&magicFunc);
+    test1.apply(&magicFunc);
 
-    test <<= 1;
-    test %= 7;
-
+    // Perform other operations on the elements in the list
+    test1 = (test1 << 2) % 15;
+    test1 ^= 0xF;
+    
+    // Print elements [1..14] from the list
     std::cout << "[";
-    for (int i : test.range(1, 14))
+    for (int i : test1.range(1, 10))
         std::cout << i << " ";
     std::cout << "\b]\n";
 
@@ -130,6 +131,96 @@ int main() {
 #### Output
 
 ```
-[3 4 0 5 5 0 4 3 4 0 5 5 0 4]
+[5 5 11 8 11 5 5 11 8 11]
 ```
+
+
+
+---
+
+
+
+## Brief Documentation
+
+### Initializing the InfList
+
+The list can be initialized without any arguments. This will make every element in the list 0:
+```C++
+InfList<int> a; // a = [0, 0, 0, ...]
+```
+
+The list can be initilized with a number, function reference, or another InfList:
+```C++
+InfList<float> b(5.0); // b = [5.0, 5.0, 5.0, ...]
+InfList<int> c(&func); // c = [func(0), func(1), func(2), ...]
+InfList<float> d(b);   // d = [5.0, 5.0, 5.0, ...]
+```
+
+Additionally, you can specify the starting position and the step size of the list. If you don't include the starting position and step size, the defaults are 0 and 1 respectively.
+```C++
+InfList<int> e(&func, 3, -2); // e = [func(3), func(1), func(-1), ...]
+```
+
+
+
+### InfList Operations
+
+You can change the starting position and step size at any time:
+```C++
+InfList<bool> f(&boolFunc, 0, 1);
+f.setStart(1);
+f.setStep(2);
+// f.getStart() = 1
+// f.getStep() = 2
+```
+
+InfLists support built-in operations like +, -, *, /, &, |, ^, %, <<, >>, ++, --. Also, you may specify your own function with the apply() function:
+```C++
+InfList<double> g(&func1);
+g %= 17;
+g.apply(&func2);
+g = (g++) / 2;
+// g = [(func2(func1(0) % 17) + 1) / 2, (func2(func1(1) % 17) + 1) / 2, ...]
+```
+
+
+
+### Accessing InfList Elements
+
+You can access the value at any space in the list with [] or the valAt() function:
+```C++
+InfList<int> h(&func, 0, 2);
+// h[0] = func(0)
+// h[1] = func(2)
+// h.valAt(2) = func(4)
+```
+
+You can access the first number of elements with the first() function:
+```C++
+InfList<int> h(&func, 0, 2);
+// h.first(3) = [func(0), func(2), func(4)]
+```
+
+You can access a range of elements with the range() function:
+```C++
+InfList<int> h(&func, 0, 2);
+// h.range(0, 2) = [func(0), func(2), func(4)]
+// h.range(4, 7) = [func(8), func(10), func(12), func(14)]
+```
+
+You can get the sum or product of the first() or range() functions:
+```C++
+InfList<int> h(&func, 0, 2);
+// h.prodFirst(3) = func(0) * func(2) * func(4)
+// h.sumRange(0, 2) = func(0) + func(2) + func(4)
+```
+
+You can also specify a step size for any of the first() and range() functions. This does not change the step size of the list.
+```C++
+InfList<int> h(&func, 0, 2);
+// h.sumFirst(3) = func(0) + func(2) + func(4)
+// h.sumFirst(3, 2) = func(0) + func(2) + func(4)
+// h.sumFirst(3, 1) = func(0) + func(1) + func(2)
+```
+
 
