@@ -9,12 +9,12 @@ Written by Nathan Snyder
 #include <vector>
 #include <variant>
 
-template<class T>
+template<typename T, typename U = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
 class InfList {
 private: // Type declarations
-    typedef T(*_il_func)(T); // Function pointer that takes in a T and returns a T
-    typedef T(*_il_binop)(T,T); // Function pointer that takes in two T's and returns a T
-    typedef std::variant<T, _il_func, const InfList<T>> _il_types_noop; // Variant of types that functions can take
+    typedef T(*_il_func)(T); // Function pointer that takes in a T and returns a T (these can be both functions and unary operators)
+    typedef T(*_il_binop)(T,T); // Function pointer that takes in two T's and returns a T (binary operator)
+    typedef std::variant<T, _il_func, const InfList<T, U>> _il_types_noop; // Variant of types that functions can take (no operations)
 
 public: // Constructors
     InfList();
@@ -30,56 +30,42 @@ private: // Private class fields
     std::vector<_il_func> unops;
     std::vector<_il_binop> binops;
 
-public: // Public methods
+public:
     // Getters and Setters:
     T getStart() const;
     T getStep() const;
     void setStart(T start);
     void setStep(T step);
 
-    T valAt(T x) const;
+    T valAt(int x) const;
 
-    std::vector<T> first(T num) const;
-    std::vector<T> first(T num, T step) const;
-    T sumFirst(T num) const;
-    T sumFirst(T num, T step) const;
-    T prodFirst(T num) const;
-    T prodFirst(T num, T step) const;
+    std::vector<T> first(int num) const;
+    T sumFirst(int num) const;
+    T prodFirst(int num) const;
 
-    std::vector<T> range(T start, T end) const;
-    std::vector<T> range(T start, T end, T step) const;
-    T sumRange(T start, T end) const;
-    T sumRange(T start, T end, T step) const;
-    T prodRange(T start, T end) const;
-    T prodRange(T start, T end, T step) const;
+    std::vector<T> range(int start, int end) const;
+    T sumRange(int start, int end) const;
+    T prodRange(int start, int end) const;
 
     // Public methods for applying unary and binary operators:
     void apply(_il_func unop);
     void apply(_il_types_noop obj, _il_binop binop);
 
-private: // Private methods
+private:
     // Private methods for applying unary and binary operators:
-    const InfList<T>& addUnOp(_il_func unop);
-    const InfList<T>& addBinOp(_il_types_noop obj, _il_binop func_op);
+    const InfList<T, U>& addUnOp(_il_func unop);
+    const InfList<T, U>& addBinOp(_il_types_noop obj, _il_binop func_op);
 
     // Private methods for applying numbers, functions, and other InfLists:
     void addOp(_il_types_noop obj);
     void addOp_num(T obj);
     void addOp_func(_il_func obj);
-    void addOp_list(const InfList<T>& obj);
+    void addOp_list(const InfList<T, U>& obj);
 
-public: // Operators and operator overloads
-    // Unary operators
+public:
+    // Operator methods
     static T inc_op(T x);
     static T dec_op(T x);
-
-    // Unary operator overloads
-    const InfList<T>& operator++();
-    const InfList<T>& operator--();
-    InfList<T> operator++(int x);
-    InfList<T> operator--(int x);
-
-    // Binary operators
     static T add_op(T x1, T x2);
     static T sub_op(T x1, T x2);
     static T mult_op(T x1, T x2);
@@ -91,45 +77,50 @@ public: // Operators and operator overloads
     static T rshift_op(T x1, T x2);
     static T lshift_op(T x1, T x2);
 
-    // Binary operator overloads (accept T, _il_func, and const InfList<T> as arguments)
-    const InfList<T>& operator+=(_il_types_noop obj);
-    const InfList<T>& operator-=(_il_types_noop obj);
-    const InfList<T>& operator*=(_il_types_noop obj);
-    const InfList<T>& operator/=(_il_types_noop obj);
-    const InfList<T>& operator&=(_il_types_noop obj);
-    const InfList<T>& operator|=(_il_types_noop obj);
-    const InfList<T>& operator^=(_il_types_noop obj);
-    const InfList<T>& operator%=(_il_types_noop obj);
-    const InfList<T>& operator>>=(_il_types_noop obj);
-    const InfList<T>& operator<<=(_il_types_noop obj);
-    const InfList<T>& operator+(_il_types_noop obj) const;
-    const InfList<T>& operator-(_il_types_noop obj) const;
-    const InfList<T>& operator*(_il_types_noop obj) const;
-    const InfList<T>& operator/(_il_types_noop obj) const;
-    const InfList<T>& operator&(_il_types_noop obj) const;
-    const InfList<T>& operator|(_il_types_noop obj) const;
-    const InfList<T>& operator^(_il_types_noop obj) const;
-    const InfList<T>& operator%(_il_types_noop obj) const;
-    const InfList<T>& operator>>(_il_types_noop obj) const;
-    const InfList<T>& operator<<(_il_types_noop obj) const;
+    // Operator overloads
+    InfList<T, U> operator[](T num) const;
+    const InfList<T, U>& operator++();
+    const InfList<T, U>& operator--();
+    InfList<T, U> operator++(int x);
+    InfList<T, U> operator--(int x);
+    const InfList<T, U>& operator+=(_il_types_noop obj);
+    const InfList<T, U>& operator-=(_il_types_noop obj);
+    const InfList<T, U>& operator*=(_il_types_noop obj);
+    const InfList<T, U>& operator/=(_il_types_noop obj);
+    const InfList<T, U>& operator&=(_il_types_noop obj);
+    const InfList<T, U>& operator|=(_il_types_noop obj);
+    const InfList<T, U>& operator^=(_il_types_noop obj);
+    const InfList<T, U>& operator%=(_il_types_noop obj);
+    const InfList<T, U>& operator>>=(_il_types_noop obj);
+    const InfList<T, U>& operator<<=(_il_types_noop obj);
+    InfList<T, U> operator+(_il_types_noop obj) const;
+    InfList<T, U> operator-(_il_types_noop obj) const;
+    InfList<T, U> operator*(_il_types_noop obj) const;
+    InfList<T, U> operator/(_il_types_noop obj) const;
+    InfList<T, U> operator&(_il_types_noop obj) const;
+    InfList<T, U> operator^(_il_types_noop obj) const;
+    InfList<T, U> operator|(_il_types_noop obj) const;
+    InfList<T, U> operator%(_il_types_noop obj) const;
+    InfList<T, U> operator>>(_il_types_noop obj) const;
+    InfList<T, U> operator<<(_il_types_noop obj) const;
 };
 
 
 
 // Constructors
 
-template<class T>
-InfList<T>::InfList() : start((T) 0), step((T) 1) {
+template<typename T, typename U>
+InfList<T, U>::InfList() : start((T) 0), step((T) 1) {
     addOp((T) 0);
 }
 
-template<class T>
-InfList<T>::InfList(_il_types_noop obj) : start((T) 0), step((T) 1) {
+template<typename T, typename U>
+InfList<T, U>::InfList(_il_types_noop obj) : start((T) 0), step((T) 1) {
     addOp(obj);
 }
 
-template<class T>
-InfList<T>::InfList(_il_types_noop obj, T start, T step) : start(start) {
+template<typename T, typename U>
+InfList<T, U>::InfList(_il_types_noop obj, T start, T step) : start(start) {
     setStep(step);
     addOp(obj);
 }
@@ -138,28 +129,29 @@ InfList<T>::InfList(_il_types_noop obj, T start, T step) : start(start) {
 
 // Public methods
 
-template<class T>
-T InfList<T>::getStart() const {
+template<typename T, typename U>
+T InfList<T, U>::getStart() const {
     return this->start;
 }
 
-template<class T>
-T InfList<T>::getStep() const {
+template<typename T, typename U>
+T InfList<T, U>::getStep() const {
     return this->step;
 }
 
-template<class T>
-void InfList<T>::setStart(T start) {
+template<typename T, typename U>
+void InfList<T, U>::setStart(T start) {
     this->start = start;
 }
 
-template<class T>
-void InfList<T>::setStep(T step) {
+template<typename T, typename U>
+void InfList<T, U>::setStep(T step) {
     this->step = (step == 0) ? 1 : step;
 }
 
-template<class T>
-T InfList<T>::valAt(T x) const {
+// x is the index of the array
+template<typename T, typename U>
+T InfList<T, U>::valAt(int x) const {
     std::vector<T> evalStack;
     T val1, val2;
     for (std::pair elem : evalList) {
@@ -168,7 +160,7 @@ T InfList<T>::valAt(T x) const {
                 evalStack.push_back(nums[elem.second]);
                 break;
             case 1: // funcs
-                evalStack.push_back(funcs[elem.second](x));
+                evalStack.push_back(funcs[elem.second](start + (step * (T) x)));
                 break;
             case 2: // unops
                 val1 = evalStack.back();
@@ -188,103 +180,70 @@ T InfList<T>::valAt(T x) const {
     return evalStack[0];
 }
 
-template<class T>
-std::vector<T> InfList<T>::first(T num) const {
-    return range(this->start, this->start + (num * this->step) - 1);
+template<typename T, typename U>
+std::vector<T> InfList<T, U>::first(int num) const {
+    return (num < 1) ? (std::vector<T>) {} : range(0, num - 1);
 }
 
-template<class T>
-std::vector<T> InfList<T>::first(T num, T step) const {
-    if (step == 0) step = this->step;
-    return range(this->start, this->start + (num * step) - 1, step);
+template<typename T, typename U>
+T InfList<T, U>::sumFirst(int num) const {
+    return (num < 1) ? (T) 0 : sumRange(0, num - 1);
 }
 
-template<class T>
-T InfList<T>::sumFirst(T num) const {
-    return sumRange(this->start, this->start + (num * step) - 1);
+template<typename T, typename U>
+T InfList<T, U>::prodFirst(int num) const {
+    return (num < 1) ? (T) 0 : prodRange(0, num - 1);
 }
 
-template<class T>
-T InfList<T>::sumFirst(T num, T step) const {
-    if (step == 0) step = this->step;
-    return sumRange(this->start, this->start + (num * step) - 1, step);
-}
-
-template<class T>
-T InfList<T>::prodFirst(T num) const {
-    return prodRange(this->start, this->start + (num * step) - 1);
-}
-
-template<class T>
-T InfList<T>::prodFirst(T num, T step) const {
-    if (step == 0) step = this->step;
-    return prodRange(this->start, this->start + (num * step) - 1, step);
-}
-
-template<class T>
-std::vector<T> InfList<T>::range(T start, T end) const {
-    return range(start, end, this->step);
-}
-
-template<class T>
-std::vector<T> InfList<T>::range(T start, T end, T step) const {
+template<typename T, typename U>
+std::vector<T> InfList<T, U>::range(int start, int end) const {
     std::vector<T> arr;
-    if (step == 0) step = this->step;
 
-    if ((step < 0) && (start >= end)) {
-        for (T i = start; i >= end; i += step) arr.push_back(valAt(i));
-    } else if (start <= end) {
-        for (T i = start; i <= end; i += step) arr.push_back(valAt(i));
+    if ((start >= end) && (step < 0)) {
+        for (int i = start; i >= end; i--) arr.push_back(valAt(i));
+    }
+    else if ((start <= end) && (step > 0)) {
+        for (int i = start; i <= end; i++) arr.push_back(valAt(i));
     }
 
     return arr;
 }
 
-template<class T>
-T InfList<T>::sumRange(T start, T end) const {
-    return sumRange(start, end, this->step);
-}
-
-template<class T>
-T InfList<T>::sumRange(T start, T end, T step) const {
+template<typename T, typename U>
+T InfList<T, U>::sumRange(int start, int end) const {
     T sum = (T) 0;
-    if (step == 0) step = this->step;
 
-    if ((step < 0) && (start >= end)) {
-        for (T i = start; i >= end; i += step) sum += valAt(i);
-    } else if (start <= end) {
-        for (T i = start; i <= end; i += step) sum += valAt(i);
+    if ((start >= end) && (step < 0)) {
+        for (int i = start; i >= end; i--) sum += valAt(i);
+    }
+    else if ((start <= end) && (step > 0)) {
+        for (int i = start; i <= end; i++) sum += valAt(i);
     }
     
     return sum;
 }
 
-template<class T>
-T InfList<T>::prodRange(T start, T end) const {
-    return prodRange(start, end, this->step);
-}
+template<typename T, typename U>
+T InfList<T, U>::prodRange(int start, int end) const {
+    T prod = (T) 1;
 
-template<class T>
-T InfList<T>::prodRange(T start, T end, T step) const {
-    T sum = (T) 1;
-    if (step == 0) step = this->step;
-
-    if ((step < 0) && (start >= end)) {
-        for (T i = start; i >= end; i += step) sum *= valAt(i);
-    } else if (start <= end) {
-        for (T i = start; i <= end; i += step) sum *= valAt(i);
+    if ((start >= end) && (step < 0)) {
+        for (int i = start; i >= end; i--) prod *= valAt(i);
+    }
+    else if ((start <= end) && (step > 0)) {
+        for (int i = start; i <= end; i++) prod *= valAt(i);
     }
     
-    return sum;
+    return prod;
 }
 
-template<class T>
-void InfList<T>::apply(_il_func unop) {
+template<typename T, typename U>
+void InfList<T, U>::apply(_il_func unop) {
     addUnOp(unop);
 }
 
-template<class T>
-void InfList<T>::apply(_il_types_noop obj, _il_binop binop) {
+template<typename T, typename U>
+void InfList<T, U>::apply(_il_types_noop obj, _il_binop binop) {
     addBinOp(obj, binop);
 }
 
@@ -292,15 +251,15 @@ void InfList<T>::apply(_il_types_noop obj, _il_binop binop) {
 
 // Private methods
 
-template<class T>
-const InfList<T>& InfList<T>::addUnOp(_il_func unop) {
+template<typename T, typename U>
+const InfList<T, U>& InfList<T, U>::addUnOp(_il_func unop) {
     this->unops.push_back(unop);
     this->evalList.push_back(std::pair<int, int>(2, unops.size()-1));
     return *this;
 }
 
-template<class T>
-const InfList<T>& InfList<T>::addBinOp(_il_types_noop obj, _il_binop func_op) {
+template<typename T, typename U>
+const InfList<T, U>& InfList<T, U>::addBinOp(_il_types_noop obj, _il_binop func_op) {
     addOp(obj);
 
     this->binops.push_back(func_op);
@@ -308,8 +267,8 @@ const InfList<T>& InfList<T>::addBinOp(_il_types_noop obj, _il_binop func_op) {
     return *this;
 }
 
-template<class T>
-void InfList<T>::addOp(_il_types_noop obj) {
+template<typename T, typename U>
+void InfList<T, U>::addOp(_il_types_noop obj) {
     try {
         addOp_num(std::get<0>(obj));
     } catch (const std::exception &e1) {
@@ -321,20 +280,20 @@ void InfList<T>::addOp(_il_types_noop obj) {
     }
 }
 
-template<class T>
-void InfList<T>::addOp_num(T obj) {
+template<typename T, typename U>
+void InfList<T, U>::addOp_num(T obj) {
     this->nums.push_back(obj);
     this->evalList.push_back(std::pair<int, int>(0, nums.size()-1));
 }
 
-template<class T>
-void InfList<T>::addOp_func(_il_func obj) {
+template<typename T, typename U>
+void InfList<T, U>::addOp_func(_il_func obj) {
     this->funcs.push_back(obj);
     this->evalList.push_back(std::pair<int, int>(1, funcs.size()-1));
 }
 
-template<class T>
-void InfList<T>::addOp_list(const InfList<T>& obj) {
+template<typename T, typename U>
+void InfList<T, U>::addOp_list(const InfList<T, U>& obj) {
     for (std::pair elem : obj.evalList) {
         switch (elem.first) {
             case 0: // nums
@@ -359,185 +318,194 @@ void InfList<T>::addOp_list(const InfList<T>& obj) {
 
 
 
-// Operators and operator overloads
+// Operator methods
 
-template<class T> 
-T InfList<T>::inc_op(T x) {
+template<typename T, typename U> 
+T InfList<T, U>::inc_op(T x) {
     return ++x;
 }
 
-template<class T> 
-T InfList<T>::dec_op(T x) {
+template<typename T, typename U> 
+T InfList<T, U>::dec_op(T x) {
     return --x;
 }
 
-template<class T>
-const InfList<T>& InfList<T>::operator++() {
-    return addUnOp(InfList<T>::inc_op);
-}
-
-template<class T>
-const InfList<T>& InfList<T>::operator--() { 
-    return addUnOp(InfList<T>::dec_op);
-}
-
-template<class T>
-InfList<T> InfList<T>::operator++(int x) {
-    return (this->operator++());
-}
-
-template<class T>
-InfList<T> InfList<T>::operator--(int x) {
-    return (this->operator--());
-}
-
-template<class T>
-T InfList<T>::add_op(T x1, T x2) { 
+template<typename T, typename U>
+T InfList<T, U>::add_op(T x1, T x2) { 
     return x2 + x1; 
 }
 
-template<class T>
-T InfList<T>::sub_op(T x1, T x2) { 
+template<typename T, typename U>
+T InfList<T, U>::sub_op(T x1, T x2) { 
     return x2 - x1; 
 }
 
-template<class T>
-T InfList<T>::mult_op(T x1, T x2) { 
+template<typename T, typename U>
+T InfList<T, U>::mult_op(T x1, T x2) { 
     return x2 * x1; 
 }
 
-template<class T>
-T InfList<T>::div_op(T x1, T x2) { 
+template<typename T, typename U>
+T InfList<T, U>::div_op(T x1, T x2) { 
     return x2 / x1; 
 }
 
-template<class T>
-T InfList<T>::and_op(T x1, T x2) { 
+template<typename T, typename U>
+T InfList<T, U>::and_op(T x1, T x2) { 
     return x2 & x1; 
 }
 
-template<class T>
-T InfList<T>::or_op(T x1, T x2) { 
+template<typename T, typename U>
+T InfList<T, U>::or_op(T x1, T x2) { 
     return x2 | x1; 
 }
 
-template<class T>
-T InfList<T>::xor_op(T x1, T x2) { 
+template<typename T, typename U>
+T InfList<T, U>::xor_op(T x1, T x2) { 
     return x2 ^ x1; 
 }
 
-template<class T>
-T InfList<T>::mod_op(T x1, T x2) { 
-    return x2 % x1; 
+template<typename T, typename U>
+T InfList<T, U>::mod_op(T x1, T x2) { 
+    return (int) x2 % (int) x1; 
 }
 
-template<class T>
-T InfList<T>::rshift_op(T x1, T x2) { 
-    return x2 >> x1; 
+template<typename T, typename U>
+T InfList<T, U>::rshift_op(T x1, T x2) { 
+    return (int) x2 >> (int) x1; 
 }
 
-template<class T>
-T InfList<T>::lshift_op(T x1, T x2) { 
-    return x2 << x1; 
+template<typename T, typename U>
+T InfList<T, U>::lshift_op(T x1, T x2) { 
+    return (int) x2 << (int) x1; 
 }
 
-template<class T>
-const InfList<T>& InfList<T>::operator+=(_il_types_noop obj) {
-    return addBinOp(obj, InfList<T>::add_op);
+
+
+// Operator overloads
+
+template<typename T, typename U>
+InfList<T, U> InfList<T, U>::operator[](T num) const {
+    return this->valAt(num);
 }
 
-template<class T>
-const InfList<T>& InfList<T>::operator-=(_il_types_noop obj) {
-    return addBinOp(obj, InfList<T>::sub_op);
+template<typename T, typename U>
+const InfList<T, U>& InfList<T, U>::operator++() {
+    return addUnOp(InfList<T, U>::inc_op);
 }
 
-template<class T>
-const InfList<T>& InfList<T>::operator*=(_il_types_noop obj) {
-    return addBinOp(obj, InfList<T>::mult_op);
+template<typename T, typename U>
+const InfList<T, U>& InfList<T, U>::operator--() { 
+    return addUnOp(InfList<T, U>::dec_op);
 }
 
-template<class T>
-const InfList<T>& InfList<T>::operator/=(_il_types_noop obj) {
-    return addBinOp(obj, InfList<T>::div_op);
+template<typename T, typename U>
+InfList<T, U> InfList<T, U>::operator++(int x) {
+    return (this->operator++());
 }
 
-template<class T>
-const InfList<T>& InfList<T>::operator&=(_il_types_noop obj) {
-    return addBinOp(obj, InfList<T>::and_op);
+template<typename T, typename U>
+InfList<T, U> InfList<T, U>::operator--(int x) {
+    return (this->operator--());
 }
 
-template<class T>
-const InfList<T>& InfList<T>::operator|=(_il_types_noop obj) {
-    return addBinOp(obj, InfList<T>::or_op);
+template<typename T, typename U>
+const InfList<T, U>& InfList<T, U>::operator+=(_il_types_noop obj) {
+    return addBinOp(obj, InfList<T, U>::add_op);
 }
 
-template<class T>
-const InfList<T>& InfList<T>::operator^=(_il_types_noop obj) {
-    return addBinOp(obj, InfList<T>::xor_op);
+template<typename T, typename U>
+const InfList<T, U>& InfList<T, U>::operator-=(_il_types_noop obj) {
+    return addBinOp(obj, InfList<T, U>::sub_op);
 }
 
-template<class T>
-const InfList<T>& InfList<T>::operator%=(_il_types_noop obj) {
-    return addBinOp(obj, InfList<T>::mod_op);
+template<typename T, typename U>
+const InfList<T, U>& InfList<T, U>::operator*=(_il_types_noop obj) {
+    return addBinOp(obj, InfList<T, U>::mult_op);
 }
 
-template<class T>
-const InfList<T>& InfList<T>::operator>>=(_il_types_noop obj) {
-    return addBinOp(obj, InfList<T>::rshift_op);
+template<typename T, typename U>
+const InfList<T, U>& InfList<T, U>::operator/=(_il_types_noop obj) {
+    return addBinOp(obj, InfList<T, U>::div_op);
 }
 
-template<class T>
-const InfList<T>& InfList<T>::operator<<=(_il_types_noop obj) {
-    return addBinOp(obj, InfList<T>::lshift_op);
+template<typename T, typename U>
+const InfList<T, U>& InfList<T, U>::operator&=(_il_types_noop obj) {
+    return addBinOp(obj, InfList<T, U>::and_op);
 }
 
-template<class T>
-const InfList<T>& InfList<T>::operator+(_il_types_noop obj) const {
+template<typename T, typename U>
+const InfList<T, U>& InfList<T, U>::operator|=(_il_types_noop obj) {
+    return addBinOp(obj, InfList<T, U>::or_op);
+}
+
+template<typename T, typename U>
+const InfList<T, U>& InfList<T, U>::operator^=(_il_types_noop obj) {
+    return addBinOp(obj, InfList<T, U>::xor_op);
+}
+
+template<typename T, typename U>
+const InfList<T, U>& InfList<T, U>::operator%=(_il_types_noop obj) {
+    return addBinOp(obj, InfList<T, U>::mod_op);
+}
+
+template<typename T, typename U>
+const InfList<T, U>& InfList<T, U>::operator>>=(_il_types_noop obj) {
+    return addBinOp(obj, InfList<T, U>::rshift_op);
+}
+
+template<typename T, typename U>
+const InfList<T, U>& InfList<T, U>::operator<<=(_il_types_noop obj) {
+    return addBinOp(obj, InfList<T, U>::lshift_op);
+}
+
+template<typename T, typename U>
+InfList<T, U> InfList<T, U>::operator+(_il_types_noop obj) const {
     return InfList(*this) += obj;
 }
 
-template<class T>
-const InfList<T>& InfList<T>::operator-(_il_types_noop obj) const {
+template<typename T, typename U>
+InfList<T, U> InfList<T, U>::operator-(_il_types_noop obj) const {
     return InfList(*this) -= obj;
 }
 
-template<class T>
-const InfList<T>& InfList<T>::operator*(_il_types_noop obj) const {
+template<typename T, typename U>
+InfList<T, U> InfList<T, U>::operator*(_il_types_noop obj) const {
     return InfList(*this) *= obj;
 }
 
-template<class T>
-const InfList<T>& InfList<T>::operator/(_il_types_noop obj) const {
+template<typename T, typename U>
+InfList<T, U> InfList<T, U>::operator/(_il_types_noop obj) const {
     return InfList(*this) /= obj;
 }
 
-template<class T>
-const InfList<T>& InfList<T>::operator&(_il_types_noop obj) const {
+template<typename T, typename U>
+InfList<T, U> InfList<T, U>::operator&(_il_types_noop obj) const {
     return InfList(*this) &= obj;
 }
 
-template<class T>
-const InfList<T>& InfList<T>::operator|(_il_types_noop obj) const {
+template<typename T, typename U>
+InfList<T, U> InfList<T, U>::operator|(_il_types_noop obj) const {
     return InfList(*this) |= obj;
 }
 
-template<class T>
-const InfList<T>& InfList<T>::operator^(_il_types_noop obj) const {
+template<typename T, typename U>
+InfList<T, U> InfList<T, U>::operator^(_il_types_noop obj) const {
     return InfList(*this) ^= obj;
 }
 
-template<class T>
-const InfList<T>& InfList<T>::operator%(_il_types_noop obj) const {
+template<typename T, typename U>
+InfList<T, U> InfList<T, U>::operator%(_il_types_noop obj) const {
     return InfList(*this) %= obj;
 }
 
-template<class T>
-const InfList<T>& InfList<T>::operator>>(_il_types_noop obj) const {
+template<typename T, typename U>
+InfList<T, U> InfList<T, U>::operator>>(_il_types_noop obj) const {
     return InfList(*this) >>= obj;
 }
 
-template<class T>
-const InfList<T>& InfList<T>::operator<<(_il_types_noop obj) const {
+template<typename T, typename U>
+InfList<T, U> InfList<T, U>::operator<<(_il_types_noop obj) const {
     return InfList(*this) <<= obj;
 }
 
