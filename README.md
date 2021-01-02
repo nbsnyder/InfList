@@ -46,15 +46,15 @@ int main() {
 
     std::cout << "Value of the sum of the Leibniz series by number of terms:\n";
     for (int i = 1; i <= 1000000; i *= 10)
-        // sumFirst(i) adds the first i entries in the list
-        std::cout << i << " --> " << 4 * calc_pi_over_4.sumFirst(i) << "\n";
+        // foldFirst(i, op) applies the op function to the first i entries in the list
+        std::cout << i << " --> " << 4 * calc_pi_over_4.foldFirst(i, "+") << "\n";
     
     std::cout << "\n";
 
     std::cout << "Value of the product of the Wallis product by number of terms:\n";
     for (int i = 1; i <= 1000000; i *= 10)
-        // prodFirst(i) multiplies the first i entries in the list
-        std::cout << i << " --> " << 2 * calc_pi_over_2.prodFirst(i) << "\n";
+        // foldFirst(i, op) applies the op function to the first i entries in the list
+        std::cout << i << " --> " << 2 * calc_pi_over_2.foldFirst(i, "*") << "\n";
     
     return 0;
 }
@@ -106,7 +106,7 @@ int main() {
     std::cout << "Definite integral of y=2x^2-3x+7 in the range [0, 10] by step size:\n";
     for (double i = 1.0; i >= 0.000001; i /= 10) {
         y_integral.setStep(i);
-        std::cout << i << " --> " << i * y_integral.sumFirst(10/i) << "\n";
+        std::cout << i << " --> " << i * y_integral.foldFirst(10/i, "+") << "\n";
     }
 
     return 0;
@@ -145,11 +145,11 @@ int main() {
     InfList<int> test1(&initialFunc);
 
     // Apply magicFunc to every element in the list
-    test1.apply(&magicFunc);
+    test1.map(&magicFunc);
 
     // Perform other operations on the elements in the list
     test1 = (test1 << 1) % 15;
-    test1 ^= 0xF;
+    test1 ^= 0xA;
     
     // Print the first 10 elements ([0..9]) in the list
     std::cout << "[";
@@ -170,8 +170,8 @@ int main() {
 #### Output
 
 ```
-[11 5 5 11 8 11 5 5 11 8]
-[5 5 11 8 11 5 5 11 8 11]
+[14 0 0 14 13 14 0 0 14 13]
+[0 0 14 13 14 0 0 14 13 14]
 ```
 
 
@@ -203,6 +203,18 @@ InfList<int> e(&func, 3, -2); // e = [func(3), func(1), func(-1), ...]
 
 
 
+### Accessing InfList Elements
+
+You can access the value at any space in the list with [] or the at() method:
+```C++
+InfList<int> h(&func, 0, 2);
+// h[0] = func(0)
+// h[1] = func(2)
+// h.at(2) = func(4)
+```
+
+
+
 ### InfList Operations
 
 You can change the starting position and step size at any time:
@@ -214,26 +226,27 @@ f.setStep(2);
 // f.getStep() = 2
 ```
 
-InfLists support operations like +, -, *, /, &, |, ^, %, <<, >>, ++, and --. Also, you may specify your own function with the apply() method:
+You can use arithmetic and compound assignment operators directly:
 ```C++
 InfList<double> g(&func1);
+g = (++g) << 1;
 g %= 17;
-g.apply(&func2);
-g = (g++) / 2;
-// g = [(func2(func1(0) % 17) + 1) / 2, (func2(func1(1) % 17) + 1) / 2, ...]
+// g = [(++func1(0) << 1) % 17, (++func1(1) << 1) % 17, ...]
 ```
 
+The map() method applies a function to every element in the list. You can call built-in operations by putting them in quotes, or you may specify your own function by passing a function reference:
 
-
-### Accessing InfList Elements
-
-You can access the value at any space in the list with [] or the valAt() method:
 ```C++
-InfList<int> h(&func, 0, 2);
-// h[0] = func(0)
-// h[1] = func(2)
-// h.valAt(2) = func(4)
+InfList<double> g(&func1);
+g.map("++") // equivalent to `g++;`
+g.map(abs); // take the absolute value of every element with the built-in abs() function
+g.map("%", 17); // equivalent to `g %= 17;`
+g.map(&func2, 5); // apply func2(..., 5) to every element
 ```
+
+
+
+### Reducing lists
 
 You can access the first number of elements with the first() method:
 ```C++
@@ -248,10 +261,18 @@ InfList<int> h(&func, 0, 2);
 // h.range(4, 7) = [func(8), func(10), func(12), func(14)]
 ```
 
-You can get the sum or product of the first() or range() methods:
+The foldFirst() and foldRange() methods recursively apply a function to each element in a section the list to get a numerical answer. You can use the same **binary** operators as with map, with the addition of "max" and "min", which find the maximum and minimum element respectively:
 ```C++
-InfList<int> h(&func, 0, 2);
-// h.prodFirst(3) = func(0) * func(2) * func(4)
-// h.sumRange(0, 2) = func(0) + func(2) + func(4)
+InfList<int> i(&func);
+i.foldFirst(3, &binop); // binop(binop(binop(func(0), func(1)), func(2)), func(3))
+i.foldFirst(4, "+"); // add the first 4 elements: ((func(0) + func(1)) + func(2)) + func(3)
+i.foldFirst(10, "*"); // multiply the first 10 elements
+i.foldRange(3, 42, "+"); // add the elements in the range [3..42]
+i.foldFirst(100, "max"); // get the maximum of the first 100 elements
 ```
 
+You can also specify another argument to foldFirst() and foldRange(), which will serve as the starting value for the function:
+```C++
+i.foldFirst(3, &binop, 4); // binop(binop(binop(binop(func(0), 4), func(1)), func(2)), func(3))
+i.foldRange(4, 32, "max", 5); // will find the maximum value of 5 and the numbers in the range [4..32]
+```
