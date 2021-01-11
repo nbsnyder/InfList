@@ -2,15 +2,13 @@
 
 An infinite list library for C++. Written by Nathan Snyder.
 
+## Description
+
+This library allows you to work with infinite lists in C++. The lists are rendered using lazy evaluation: only the functional components of the infinite list are stored, and list values are only evaluated when they are needed. InfLists support complex operations with both built-in operators and user-defined functions.
+
 ## Install and use
 
 Download InfList.h and place it in your build tree. The InfList library uses C++17 features, so make sure to compile your project with a C++17-compatible compiler or newer.
-
-
-
----
-
-
 
 ## Usage Examples
 
@@ -48,14 +46,14 @@ int main() {
     for (int i = 1; i <= 1000000; i *= 10)
         // foldFirst(i, op) applies the op function to the first i entries in the list
         std::cout << i << " --> " << 4 * calc_pi_over_4.foldFirst(i, "+") << "\n";
-    
+
     std::cout << "\n";
 
     std::cout << "Value of the product of the Wallis product by number of terms:\n";
     for (int i = 1; i <= 1000000; i *= 10)
         // foldFirst(i, op) applies the op function to the first i entries in the list
         std::cout << i << " --> " << 2 * calc_pi_over_2.foldFirst(i, "*") << "\n";
-    
+
     return 0;
 }
 ```
@@ -81,8 +79,6 @@ Value of the product of the Wallis product by number of terms:
 100000 --> 3.14158
 1000000 --> 3.14159
 ```
-
-
 
 ### Calculating Definite Integrals
 
@@ -126,8 +122,6 @@ Definite integral of y=2x^2-3x+7 in the range [0, 10] by step size:
 1e-06 --> 586.666
 ```
 
-
-
 ### Perform Operations on Every List Element
 
 #### Code
@@ -150,7 +144,7 @@ int main() {
     // Perform other operations on the elements in the list
     test1 = (test1 << 1) % 15;
     test1 ^= 0xA;
-    
+
     // Print the first 10 elements ([0..9]) in the list
     std::cout << "[";
     for (int i : test1.first(10))
@@ -174,12 +168,6 @@ int main() {
 [0 0 14 13 14 0 0 14 13 14]
 ```
 
-
-
----
-
-
-
 ## Brief Documentation
 
 ### Initializing the InfList
@@ -201,8 +189,6 @@ Additionally, you can specify the starting position and the step size of the lis
 InfList<int> e(&func, 3, -2); // e = [func(3), func(1), func(-1), ...]
 ```
 
-
-
 ### Accessing InfList Elements
 
 You can access the value at any space in the list with [] or the at() method:
@@ -212,8 +198,6 @@ InfList<int> h(&func, 0, 2);
 // h[1] = func(2)
 // h.at(2) = func(4)
 ```
-
-
 
 ### InfList Operations
 
@@ -243,8 +227,6 @@ g.map(abs); // take the absolute value of every element with the built-in abs() 
 g.map("%", 17); // equivalent to `g %= 17;`
 g.map(&func2, 5); // apply func2(..., 5) to every element
 ```
-
-
 
 ### Reducing lists
 
