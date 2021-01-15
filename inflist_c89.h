@@ -29,24 +29,26 @@ typedef struct {
     /* Each index in the list progresses by step [default: 1] */
     _inflist_type step;
 
-    /* stores pairs of integers that correspond to entries in the next four vectors: */
+    /* Stores references to entries in nums, funcs, and binops */
     struct {
-        uint16_t *first, *second, currSize, maxSize;
+        uint16_t *first; /* Stores a list of numbers 0-3 that correspond to either nums, funcs, or binops */
+        uint16_t *second; /* Stores the index of the entry in the vector specified by `first` */
+        uint16_t currSize, maxSize;
     } eval_list;
 
-    /* stores numbers (0) */
+    /* Stores numbers (0) */
     struct {
         _inflist_type *num;
         uint16_t currSize, maxSize;
     } nums;
 
-    /* stores functions (1) and unary operators (2) */
+    /* Stores functions (1) and unary operators (2) */
     struct {
         _il_func *func;
         uint16_t currSize, maxSize;
     } funcs;
 
-    /* stores binary operators (3) */
+    /* Stores binary operators (3) */
     struct {
         _il_binop *binop;
         uint16_t currSize, maxSize;
@@ -61,23 +63,6 @@ void inflist_init_from_num(inflist* list, _inflist_type num);
 void inflist_init_from_func(inflist* list, _il_func obj);
 void inflist_init_from_list(inflist* list, inflist* otherList);
 void _il_init(inflist* list);
-_inflist_type inflist_getStart(inflist* list);
-_inflist_type inflist_getStep(inflist* list);
-void inflist_setStart(inflist *list, _inflist_type start);
-void inflist_setStep(inflist *list, _inflist_type step);
-
-/* Functions for reducing the list */
-_inflist_type inflist_at(inflist *list, int x);
-_inflist_type* inflist_first(inflist *list, int num);
-_inflist_type inflist_fold_first_str(inflist *list, int num, const char *binop);
-_inflist_type inflist_fold_first_str_arg(inflist *list, int num, const char *binop, _inflist_type arg);
-_inflist_type inflist_fold_first_func(inflist *list, int num, _il_binop binop);
-_inflist_type inflist_fold_first_func_arg(inflist *list, int num, _il_binop binop, _inflist_type arg);
-_inflist_type* inflist_range(inflist *list, int start, int end);
-_inflist_type inflist_fold_range_str(inflist *list, int start, int end, const char *binop);
-_inflist_type inflist_fold_range_str_arg(inflist *list, int start, int end, const char *binop, _inflist_type arg);
-_inflist_type inflist_fold_range_func(inflist *list, int start, int end, _il_binop binop);
-_inflist_type inflist_fold_range_func_arg(inflist *list, int start, int end, _il_binop binop, _inflist_type arg);
 
 /* Functions that add a value to a specific _il_vector */
 void _il_add_to_eval_list(inflist *list, int first, int second);
@@ -91,6 +76,35 @@ void _il_add_func(inflist* list, _il_func obj);
 void _il_add_unop(inflist* list, _il_func obj);
 void _il_add_binop(inflist* list, _il_binop obj);
 void _il_add_list(inflist* list, inflist* otherList);
+
+/* Getters and setters */
+_inflist_type inflist_getStart(inflist* list);
+_inflist_type inflist_getStep(inflist* list);
+void inflist_setStart(inflist *list, _inflist_type start);
+void inflist_setStep(inflist *list, _inflist_type step);
+
+/* Get the value of the list element at index `x` */
+_inflist_type inflist_at(inflist *list, int x);
+
+/* Return a vector of the first `num` elements in the list */
+_inflist_type* inflist_first(inflist *list, int num);
+
+/* Return the result of the `binop` operation applied to the first `num` elements in the list */
+_inflist_type inflist_fold_first_str(inflist *list, int num, const char *binop);
+_inflist_type inflist_fold_first_str_arg(inflist *list, int num, const char *binop, _inflist_type arg);
+_inflist_type inflist_fold_first_func(inflist *list, int num, _il_binop binop);
+_inflist_type inflist_fold_first_func_arg(inflist *list, int num, _il_binop binop, _inflist_type arg);
+
+/* Return a vector of the elements in the list between the `start` and `end` indices */
+_inflist_type* inflist_range(inflist *list, int start, int end);
+
+/* Return the result of the `binop` operation applied to the elements in the list between the `start` and `end` indices */
+_inflist_type inflist_fold_range_str(inflist *list, int start, int end, const char *binop);
+_inflist_type inflist_fold_range_str_arg(inflist *list, int start, int end, const char *binop, _inflist_type arg);
+_inflist_type inflist_fold_range_func(inflist *list, int start, int end, _il_binop binop);
+_inflist_type inflist_fold_range_func_arg(inflist *list, int start, int end, _il_binop binop, _inflist_type arg);
+
+/* Public methods for applying an operator (either unary or binary) to every element in the list */
 void inflist_map_unop_func(inflist* list, _il_func unop);
 void inflist_map_num_binop_func(inflist* list, _inflist_type num, _il_binop binop);
 void inflist_map_func_binop_func(inflist* list, _il_func func, _il_binop binop);
@@ -100,53 +114,57 @@ void inflist_map_num_binop_str(inflist* list, _inflist_type num, const char *bin
 void inflist_map_func_binop_str(inflist* list, _il_func func, const char *binop);
 void inflist_map_list_binop_str(inflist* list, inflist* otherList, const char *binop);
 
+/* Convert the string representation of an operator into its functional form */
 _il_func inflist_string_to_unop(const char *unop);
 _il_binop inflist_string_to_binop(const char *binop);
 
 /* Operators */
-_inflist_type inc_op(_inflist_type x);
-_inflist_type dec_op(_inflist_type x);
-_inflist_type add_op(_inflist_type x1, _inflist_type x2);
-_inflist_type sub_op(_inflist_type x1, _inflist_type x2);
-_inflist_type mult_op(_inflist_type x1, _inflist_type x2);
-_inflist_type div_op(_inflist_type x1, _inflist_type x2);
-_inflist_type and_op(_inflist_type x1, _inflist_type x2);
-_inflist_type or_op(_inflist_type x1, _inflist_type x2);
-_inflist_type xor_op(_inflist_type x1, _inflist_type x2);
-_inflist_type mod_op(_inflist_type x1, _inflist_type x2);
-_inflist_type rshift_op(_inflist_type x1, _inflist_type x2);
-_inflist_type lshift_op(_inflist_type x1, _inflist_type x2);
-_inflist_type max_op(_inflist_type x1, _inflist_type x2);
-_inflist_type min_op(_inflist_type x1, _inflist_type x2);
+_inflist_type inflist_inc_op(_inflist_type x);
+_inflist_type inflist_dec_op(_inflist_type x);
+_inflist_type inflist_add_op(_inflist_type x1, _inflist_type x2);
+_inflist_type inflist_sub_op(_inflist_type x1, _inflist_type x2);
+_inflist_type inflist_mult_op(_inflist_type x1, _inflist_type x2);
+_inflist_type inflist_div_op(_inflist_type x1, _inflist_type x2);
+_inflist_type inflist_and_op(_inflist_type x1, _inflist_type x2);
+_inflist_type inflist_or_op(_inflist_type x1, _inflist_type x2);
+_inflist_type inflist_xor_op(_inflist_type x1, _inflist_type x2);
+_inflist_type inflist_mod_op(_inflist_type x1, _inflist_type x2);
+_inflist_type inflist_rshift_op(_inflist_type x1, _inflist_type x2);
+_inflist_type inflist_lshift_op(_inflist_type x1, _inflist_type x2);
+_inflist_type inflist_max_op(_inflist_type x1, _inflist_type x2);
+_inflist_type inflist_min_op(_inflist_type x1, _inflist_type x2);
 
 
 
-/* Functions to initiate the list */
-
+/* Initiate an inflist with 0 */
 void inflist_init(inflist* list) {
     if (list == NULL) return;
     _il_init(list);
     _il_add_num(list, (_inflist_type) 0);
 }
 
+/* Initiate an inflist with a number */
 void inflist_init_from_num(inflist* list, _inflist_type num) {
     if (list == NULL) return;
     _il_init(list);
     _il_add_num(list, num);
 }
 
+/* Initiate an inflist with a function */
 void inflist_init_from_func(inflist* list, _il_func obj) {
     if ((list == NULL) || (obj == NULL)) return;
     _il_init(list);
     _il_add_func(list, obj);
 }
 
+/* Initiate an inflist from another list */
 void inflist_init_from_list(inflist* list, inflist* otherList) {
     if ((list == NULL) || (otherList == NULL)) return;
     _il_init(list);
     _il_add_list(list, otherList);
 }
 
+/* Private initiation function */
 void _il_init(inflist* list) {
     if (list == NULL) return;
 
@@ -157,8 +175,7 @@ void _il_init(inflist* list) {
     list->eval_list.currSize = list->nums.currSize = list->funcs.currSize = list->binops.currSize = 0;
     list->eval_list.maxSize = list->nums.maxSize = list->funcs.maxSize = list->binops.maxSize = 8;
 
-    /* Allocate memory for all of the _il_vectors */
-    /* list->eval_list.pair = (_il_pair*) malloc(list->eval_list.maxSize * sizeof(_il_pair)); */
+    /* Allocate memory for all of the vectors */
     list->eval_list.first = (uint16_t*) malloc(list->eval_list.maxSize * sizeof(uint16_t));
     list->eval_list.second = (uint16_t*) malloc(list->eval_list.maxSize * sizeof(uint16_t));
     list->nums.num = (_inflist_type*) malloc(list->nums.maxSize * sizeof(_inflist_type));
@@ -166,134 +183,9 @@ void _il_init(inflist* list) {
     list->binops.binop = (_il_binop*) malloc(list->binops.maxSize * sizeof(_il_binop));
 }
 
-_inflist_type inflist_getStart(inflist *list) {
-    return list->start;
-}
-
-_inflist_type inflist_getStep(inflist *list) {
-    return list->step;
-}
-
-void inflist_setStart(inflist *list, _inflist_type start) {
-    list->start = start;
-}
-
-void inflist_setStep(inflist *list, _inflist_type step) {
-    if (step != 0) list->step = step;
-}
 
 
-
-/* Functions for reducing the list */
-
-_inflist_type inflist_at(inflist *list, int x) {
-    if (list == NULL) return (_inflist_type) 0;
-
-    _inflist_type evalStack[3];
-    int i, second, evalStackCurrSize = 0;
-    _inflist_type val1, val2;
-    for (i = 0; i < list->eval_list.currSize; i++) {
-        second = list->eval_list.second[i];
-        switch (list->eval_list.first[i]) {
-            case 0: /* nums */
-                if (evalStackCurrSize == 3) break;
-                evalStack[evalStackCurrSize] = list->nums.num[second];
-                evalStackCurrSize++;
-                break;
-            case 1: /* funcs (function) */
-                if (evalStackCurrSize == 3) break;
-                evalStack[evalStackCurrSize] = list->funcs.func[second](list->start + (list->step * (_inflist_type) x));
-                evalStackCurrSize++;
-                break;
-            case 2: /* funcs (unary operator) */
-                val1 = evalStack[evalStackCurrSize - 1];
-                evalStack[evalStackCurrSize - 1] = list->funcs.func[second](val1);
-                break;
-            case 3: /* binops */
-                val1 = evalStack[evalStackCurrSize - 1];
-                val2 = evalStack[evalStackCurrSize - 2];
-                evalStack[evalStackCurrSize - 2] = list->binops.binop[second](val2, val1);
-                evalStackCurrSize--;
-                break;
-        }
-    }
-
-    return evalStack[0];
-}
-
-_inflist_type* inflist_first(inflist *list, int num) {
-    return inflist_range(list, 0, num - 1);
-}
-
-_inflist_type inflist_fold_first_str(inflist *list, int num, const char *binop) {
-    return inflist_fold_first_func(list, num, inflist_string_to_binop(binop));
-}
-
-_inflist_type inflist_fold_first_str_arg(inflist *list, int num, const char *binop, _inflist_type arg) {
-    return inflist_fold_first_func_arg(list, num, inflist_string_to_binop(binop), arg);
-}
-
-_inflist_type inflist_fold_first_func(inflist *list, int num, _il_binop binop) {
-    return (num < 1) ? inflist_at(list, 0) : inflist_fold_range_func(list, 0, num - 1, binop);
-}
-
-_inflist_type inflist_fold_first_func_arg(inflist *list, int num, _il_binop binop, _inflist_type arg) {
-    return (num < 1) ? inflist_at(list, 0) : inflist_fold_range_func_arg(list, 0, num - 1, binop, arg);
-}
-
-_inflist_type* inflist_range(inflist *list, int start, int end) {
-    _inflist_type *arr = NULL;
-    int i;
-
-    if ((start >= end) && (list->step < 0)) {
-        arr = (_inflist_type*) malloc((start - end + 1) * sizeof(_inflist_type));
-        for (i = end; i <= start; i++) arr[i - end] = inflist_at(list, i);
-    } else if ((start <= end) && (list->step > 0)) {
-        arr = (_inflist_type*) malloc((end - start + 1) * sizeof(_inflist_type));
-        for (i = start; i <= end; i++) arr[i - start] = inflist_at(list, i);
-    }
-
-    return arr;
-}
-
-_inflist_type inflist_fold_range_str(inflist *list, int start, int end, const char *binop) {
-    return inflist_fold_range_func(list, start, end, inflist_string_to_binop(binop));
-}
-
-_inflist_type inflist_fold_range_str_arg(inflist *list, int start, int end, const char *binop, _inflist_type arg) {
-    return inflist_fold_range_func_arg(list, start, end, inflist_string_to_binop(binop), arg);
-}
-
-_inflist_type inflist_fold_range_func(inflist *list, int start, int end, _il_binop binop) {
-    _inflist_type ret = inflist_at(list, start);
-    int i;
-
-    if ((start > end) && (list->step < 0)) {
-        for (i = start - 1; i >= end; i--) ret = (*binop)(ret, inflist_at(list, i));
-    } else if ((start < end) && (list->step > 0)) {
-        for (i = start + 1; i <= end; i++) ret = (*binop)(ret, inflist_at(list, i));
-    }
-    
-    return ret;
-}
-
-_inflist_type inflist_fold_range_func_arg(inflist *list, int start, int end, _il_binop binop, _inflist_type arg) {
-    _inflist_type ret = (*binop)(inflist_at(list, start), arg);
-    int i;
-
-    if ((end < start) && (list->step < 0)) {
-        for (i = start - 1; i >= end; i--) ret = (*binop)(ret, inflist_at(list, i));
-    } else if ((start < end) && (list->step > 0)) {
-        for (i = start + 1; i <= end; i++) ret = (*binop)(ret, inflist_at(list, i));
-    }
-    
-    return ret;
-}
-
-
-
-/* Functions that add a value to a specific _il_vector */
-
+/* Add a value to eval_list */
 void _il_add_to_eval_list(inflist *list, int first, int second) {
     if (list == NULL) return;
 
@@ -308,6 +200,7 @@ void _il_add_to_eval_list(inflist *list, int first, int second) {
     list->eval_list.currSize++;
 }
 
+/* Add a value to nums */
 void _il_add_to_nums(inflist *list, _inflist_type a) {
     if (list == NULL) return;
 
@@ -320,6 +213,7 @@ void _il_add_to_nums(inflist *list, _inflist_type a) {
     list->nums.currSize++;
 }
 
+/* Add a value to funcs */
 void _il_add_to_funcs(inflist *list, _il_func a) {
     if ((list == NULL) || (a == NULL)) return;
 
@@ -332,6 +226,7 @@ void _il_add_to_funcs(inflist *list, _il_func a) {
     list->funcs.currSize++;
 }
 
+/* Add a value to binops */
 void _il_add_to_binops(inflist *list, _il_binop a) {
     if ((list == NULL) || (a == NULL)) return;
 
@@ -347,48 +242,44 @@ void _il_add_to_binops(inflist *list, _il_binop a) {
 
 
 
-/* Functions that add something to the inflist */
-
+/* Add a number to the inflist */
 void _il_add_num(inflist* list, _inflist_type num) {
     if (list == NULL) return;
 
     _il_add_to_nums(list, num);
-    uint16_t first = 0;
-    uint16_t second = list->nums.currSize - 1;
-    _il_add_to_eval_list(list, first, second);
+    _il_add_to_eval_list(list, 0, list->nums.currSize - 1);
 }
 
+/* Add a function to the inflist */
 void _il_add_func(inflist* list, _il_func obj) {
     if ((list == NULL) || (obj == NULL)) return;
 
     _il_add_to_funcs(list, obj);
-    uint16_t first = 1;
-    uint16_t second = list->funcs.currSize - 1;
-    _il_add_to_eval_list(list, first, second);
+    _il_add_to_eval_list(list, 1, list->funcs.currSize - 1);
 }
 
+/* Add a unary operator to the inflist */
 void _il_add_unop(inflist* list, _il_func obj) {
     if ((list == NULL) || (obj == NULL)) return;
 
     _il_add_to_funcs(list, obj);
-    uint16_t first = 2;
-    uint16_t second = list->funcs.currSize - 1;
-    _il_add_to_eval_list(list, first, second);
+    _il_add_to_eval_list(list, 2, list->funcs.currSize - 1);
 }
 
+/* Add a binary operator to the inflist */
 void _il_add_binop(inflist* list, _il_binop obj) {
     if ((list == NULL) || (obj == NULL)) return;
 
     _il_add_to_binops(list, obj);
-    uint16_t first = 3;
-    uint16_t second = list->binops.currSize - 1;
-    _il_add_to_eval_list(list, first, second);
+    _il_add_to_eval_list(list, 3, list->binops.currSize - 1);
 }
 
+/* Add another list to the inflist */
 void _il_add_list(inflist* list, inflist* otherList) {
+    int i, second;
+
     if ((list == NULL) || (otherList == NULL)) return;
 
-    int i, second;
     for (i = 0; i < otherList->eval_list.currSize; i++) {
         second = otherList->eval_list.second[i];
         switch (otherList->eval_list.first[i]) {
@@ -408,58 +299,203 @@ void _il_add_list(inflist* list, inflist* otherList) {
     }
 }
 
+
+
+/* Get the value of start */
+_inflist_type inflist_getStart(inflist *list) {
+    return (list != NULL) ? list->start : (_inflist_type) 0;
+}
+
+/* Get the value of step */
+_inflist_type inflist_getStep(inflist *list) {
+    return (list != NULL) ? list->step : (_inflist_type) 0;
+}
+
+/* Set the value of start */
+void inflist_setStart(inflist *list, _inflist_type start) {
+    if (list != NULL) list->start = start;
+}
+
+/* Set the value of step */
+void inflist_setStep(inflist *list, _inflist_type step) {
+    if ((list != NULL) && (step != 0)) list->step = step;
+}
+
+
+
+/* Get the value of the list element at index `x` */
+_inflist_type inflist_at(inflist *list, int x) {
+    _inflist_type val1, val2, evalStack[3];
+    int i, first, second, evalStackCurrSize;
+
+    if (list != NULL) {
+        evalStackCurrSize = 0;
+
+        for (i = 0; i < list->eval_list.currSize; i++) {
+            first = list->eval_list.first[i];
+            second = list->eval_list.second[i];
+            if ((first == 0) && (evalStackCurrSize < 3)) {
+                evalStack[evalStackCurrSize] = list->nums.num[second];
+                evalStackCurrSize++;
+            } else if ((first == 1) && (evalStackCurrSize < 3)) {
+                evalStack[evalStackCurrSize] = list->funcs.func[second](list->start + (list->step * (_inflist_type) x));
+                evalStackCurrSize++;
+            } else if ((first == 2) && (evalStackCurrSize > 0)) {
+                val1 = evalStack[evalStackCurrSize - 1];
+                evalStack[evalStackCurrSize - 1] = list->funcs.func[second](val1);
+            } else if ((first == 3) && (evalStackCurrSize > 1)) {
+                val1 = evalStack[evalStackCurrSize - 1];
+                val2 = evalStack[evalStackCurrSize - 2];
+                evalStack[evalStackCurrSize - 2] = list->binops.binop[second](val2, val1);
+                evalStackCurrSize--;
+            }
+        }
+    }
+
+    return evalStack[0];
+}
+
+
+
+/* Return a vector of the first `num` elements in the list */
+_inflist_type* inflist_first(inflist *list, int num) {
+    return inflist_range(list, 0, num - 1);
+}
+
+
+
+/* Return the result of the `binop` operation applied to the first `num` elements in the list */
+_inflist_type inflist_fold_first_str(inflist *list, int num, const char *binop) {
+    return inflist_fold_first_func(list, num, inflist_string_to_binop(binop));
+}
+
+_inflist_type inflist_fold_first_str_arg(inflist *list, int num, const char *binop, _inflist_type arg) {
+    return inflist_fold_first_func_arg(list, num, inflist_string_to_binop(binop), arg);
+}
+
+_inflist_type inflist_fold_first_func(inflist *list, int num, _il_binop binop) {
+    return (num < 1) ? inflist_at(list, 0) : inflist_fold_range_func(list, 0, num - 1, binop);
+}
+
+_inflist_type inflist_fold_first_func_arg(inflist *list, int num, _il_binop binop, _inflist_type arg) {
+    return (num < 1) ? inflist_at(list, 0) : inflist_fold_range_func_arg(list, 0, num - 1, binop, arg);
+}
+
+
+
+/* Return a vector of the elements in the list between the `start` and `end` indices */
+_inflist_type* inflist_range(inflist *list, int start, int end) {
+    int i;
+    _inflist_type *arr = NULL;
+
+    if (list != NULL) {
+        if ((start >= end) && (list->step < 0)) {
+            arr = (_inflist_type*) malloc((start - end + 1) * sizeof(_inflist_type));
+            for (i = end; i <= start; i++) arr[i - end] = inflist_at(list, i);
+        } else if ((start <= end) && (list->step > 0)) {
+            arr = (_inflist_type*) malloc((end - start + 1) * sizeof(_inflist_type));
+            for (i = start; i <= end; i++) arr[i - start] = inflist_at(list, i);
+        }
+    }
+
+    return arr;
+}
+
+
+
+/* Return the result of the `binop` operation applied to the elements in the list between the `start` and `end` indices */
+_inflist_type inflist_fold_range_str(inflist *list, int start, int end, const char *binop) {
+    return inflist_fold_range_func(list, start, end, inflist_string_to_binop(binop));
+}
+
+_inflist_type inflist_fold_range_str_arg(inflist *list, int start, int end, const char *binop, _inflist_type arg) {
+    return inflist_fold_range_func_arg(list, start, end, inflist_string_to_binop(binop), arg);
+}
+
+_inflist_type inflist_fold_range_func(inflist *list, int start, int end, _il_binop binop) {
+    int i;
+    _inflist_type ret = (_inflist_type) 0;
+
+    if ((list != NULL) && (binop != NULL)) {
+        ret = inflist_at(list, start);
+
+        if ((start > end) && (list->step < 0)) {
+            for (i = start - 1; i >= end; i--) ret = (*binop)(ret, inflist_at(list, i));
+        } else if ((start < end) && (list->step > 0)) {
+            for (i = start + 1; i <= end; i++) ret = (*binop)(ret, inflist_at(list, i));
+        }
+    }
+    
+    return ret;
+}
+
+_inflist_type inflist_fold_range_func_arg(inflist *list, int start, int end, _il_binop binop, _inflist_type arg) {
+    int i;
+    _inflist_type ret = (_inflist_type) 0;
+
+    if ((list != NULL) && (binop != NULL)) {
+        ret = (*binop)(inflist_at(list, start), arg);
+
+        if ((end < start) && (list->step < 0)) {
+            for (i = start - 1; i >= end; i--) ret = (*binop)(ret, inflist_at(list, i));
+        } else if ((start < end) && (list->step > 0)) {
+            for (i = start + 1; i <= end; i++) ret = (*binop)(ret, inflist_at(list, i));
+        }
+    }
+    
+    return ret;
+}
+
+
+
+/* Apply a unary operator to every element in the list */
 void inflist_map_unop_func(inflist* list, _il_func unop) {
     if ((list == NULL) || (unop == NULL)) return;
 
     _il_add_to_funcs(list, unop);
-    uint16_t first = 2;
-    uint16_t second = list->funcs.currSize - 1;
-    _il_add_to_eval_list(list, first, second);
-}
-
-void inflist_map_num_binop_func(inflist* list, _inflist_type num, _il_binop binop) {
-    if ((list == NULL) || (binop == NULL)) return;
-
-    _il_add_num(list, num);
-
-    _il_add_to_binops(list, binop);
-    uint16_t first = 3;
-    uint16_t second = list->binops.currSize - 1;
-    _il_add_to_eval_list(list, first, second);
-}
-
-void inflist_map_func_binop_func(inflist* list, _il_func func, _il_binop binop) {
-    if ((list == NULL) || (binop == NULL)) return;
-
-    _il_add_func(list, func);
-
-    _il_add_to_binops(list, binop);
-    uint16_t first = 3;
-    uint16_t second = list->binops.currSize - 1;
-    _il_add_to_eval_list(list, first, second);
-}
-
-void inflist_map_list_binop_func(inflist* list, inflist* otherList, _il_binop binop) {
-    if ((list == NULL) || (binop == NULL)) return;
-
-    _il_add_list(list, otherList);
-
-    _il_add_to_binops(list, binop);
-    uint16_t first = 3;
-    uint16_t second = list->binops.currSize - 1;
-    _il_add_to_eval_list(list, first, second);
+    _il_add_to_eval_list(list, 2, list->funcs.currSize - 1);
 }
 
 void inflist_map_unop_str(inflist* list, const char *unop) {
     inflist_map_unop_func(list, inflist_string_to_unop(unop));
 }
 
+/* Apply a binary operator to a number and every element in the list */
+void inflist_map_num_binop_func(inflist* list, _inflist_type num, _il_binop binop) {
+    if ((list == NULL) || (binop == NULL)) return;
+
+    _il_add_num(list, num);
+
+    _il_add_to_binops(list, binop);
+    _il_add_to_eval_list(list, 3, list->binops.currSize - 1);
+}
+
 void inflist_map_num_binop_str(inflist* list, _inflist_type num, const char *binop) {
     inflist_map_num_binop_func(list, num, inflist_string_to_binop(binop));
 }
 
+/* Apply a binary operator to a function and every element in the list */
+void inflist_map_func_binop_func(inflist* list, _il_func func, _il_binop binop) {
+    if ((list == NULL) || (binop == NULL)) return;
+
+    _il_add_func(list, func);
+
+    _il_add_to_binops(list, binop);
+    _il_add_to_eval_list(list, 3, list->binops.currSize - 1);
+}
+
 void inflist_map_func_binop_str(inflist* list, _il_func func, const char *binop) {
     inflist_map_func_binop_func(list, func, inflist_string_to_binop(binop));
+}
+
+/* Apply a binary operator to a list and every element in the list */
+void inflist_map_list_binop_func(inflist* list, inflist* otherList, _il_binop binop) {
+    if ((list == NULL) || (otherList == NULL) || (binop == NULL)) return;
+
+    _il_add_list(list, otherList);
+
+    _il_add_to_binops(list, binop);
+    _il_add_to_eval_list(list, 3, list->binops.currSize - 1);
 }
 
 void inflist_map_list_binop_str(inflist* list, inflist* otherList, const char *binop) {
@@ -468,88 +504,87 @@ void inflist_map_list_binop_str(inflist* list, inflist* otherList, const char *b
 
 
 
+/* Convert the string representation of a unary operator into its functional form */
 _il_func inflist_string_to_unop(const char *unop) {
-    return (strcmp(unop, "++") == 0) ? inc_op :
-           (strcmp(unop, "--") == 0) ? dec_op :
+    return (strcmp(unop, "++") == 0) ? inflist_inc_op :
+           (strcmp(unop, "--") == 0) ? inflist_dec_op :
            NULL;
 }
 
+/* Convert the string representation of a binary operator into its functional form */
 _il_binop inflist_string_to_binop(const char *binop) {
-    return (strcmp(binop, "+") == 0) ? add_op : 
-           (strcmp(binop, "-") == 0) ? sub_op : 
-           (strcmp(binop, "*") == 0) ? mult_op : 
-           (strcmp(binop, "/") == 0) ? div_op : 
-           (strcmp(binop, "%") == 0) ? mod_op : 
-           (strcmp(binop, "&") == 0) ? and_op : 
-           (strcmp(binop, "|") == 0) ? or_op : 
-           (strcmp(binop, "^") == 0) ? xor_op : 
-           (strcmp(binop, ">>") == 0) ? rshift_op : 
-           (strcmp(binop, "<<") == 0) ? lshift_op : 
-           (strcmp(binop, "max") == 0) ? max_op : 
-           (strcmp(binop, "min") == 0) ? min_op : 
+    return (strcmp(binop, "+") == 0) ? inflist_add_op : 
+           (strcmp(binop, "-") == 0) ? inflist_sub_op : 
+           (strcmp(binop, "*") == 0) ? inflist_mult_op : 
+           (strcmp(binop, "/") == 0) ? inflist_div_op : 
+           (strcmp(binop, "%") == 0) ? inflist_mod_op : 
+           (strcmp(binop, "&") == 0) ? inflist_and_op : 
+           (strcmp(binop, "|") == 0) ? inflist_or_op : 
+           (strcmp(binop, "^") == 0) ? inflist_xor_op : 
+           (strcmp(binop, ">>") == 0) ? inflist_rshift_op : 
+           (strcmp(binop, "<<") == 0) ? inflist_lshift_op : 
+           (strcmp(binop, "max") == 0) ? inflist_max_op : 
+           (strcmp(binop, "min") == 0) ? inflist_min_op : 
            NULL;
 }
 
 
 
-/* Operator methods */
-
-_inflist_type inc_op(_inflist_type x) {
+/* Operators */
+_inflist_type inflist_inc_op(_inflist_type x) {
     return ++x;
 }
 
-_inflist_type dec_op(_inflist_type x) {
+_inflist_type inflist_dec_op(_inflist_type x) {
     return --x;
 }
 
-_inflist_type add_op(_inflist_type x1, _inflist_type x2) { 
+_inflist_type inflist_add_op(_inflist_type x1, _inflist_type x2) { 
     return x1 + x2; 
 }
 
-_inflist_type sub_op(_inflist_type x1, _inflist_type x2) { 
+_inflist_type inflist_sub_op(_inflist_type x1, _inflist_type x2) { 
     return x1 - x2; 
 }
 
-_inflist_type mult_op(_inflist_type x1, _inflist_type x2) { 
+_inflist_type inflist_mult_op(_inflist_type x1, _inflist_type x2) { 
     return x1 * x2; 
 }
 
-_inflist_type div_op(_inflist_type x1, _inflist_type x2) { 
+_inflist_type inflist_div_op(_inflist_type x1, _inflist_type x2) { 
     return x1 / x2; 
 }
 
-_inflist_type and_op(_inflist_type x1, _inflist_type x2) { 
+_inflist_type inflist_and_op(_inflist_type x1, _inflist_type x2) { 
     return (_inflist_type) ((int) x1 & (int) x2); 
 }
 
-_inflist_type or_op(_inflist_type x1, _inflist_type x2) { 
+_inflist_type inflist_or_op(_inflist_type x1, _inflist_type x2) { 
     return (_inflist_type) ((int) x1 | (int) x2); 
 }
 
-_inflist_type xor_op(_inflist_type x1, _inflist_type x2) { 
+_inflist_type inflist_xor_op(_inflist_type x1, _inflist_type x2) { 
     return (_inflist_type) ((int) x1 ^ (int) x2); 
 }
 
-_inflist_type mod_op(_inflist_type x1, _inflist_type x2) { 
+_inflist_type inflist_mod_op(_inflist_type x1, _inflist_type x2) { 
     return (_inflist_type) ((int) x1 % (int) x2); 
 }
 
-_inflist_type rshift_op(_inflist_type x1, _inflist_type x2) { 
+_inflist_type inflist_rshift_op(_inflist_type x1, _inflist_type x2) { 
     return (_inflist_type) ((int) x1 >> (int) x2); 
 }
 
-_inflist_type lshift_op(_inflist_type x1, _inflist_type x2) { 
+_inflist_type inflist_lshift_op(_inflist_type x1, _inflist_type x2) { 
     return (_inflist_type) ((int) x1 << (int) x2); 
 }
 
-_inflist_type max_op(_inflist_type x1, _inflist_type x2) {
+_inflist_type inflist_max_op(_inflist_type x1, _inflist_type x2) {
     return (x1 > x2) ? x1 : x2;
 }
 
-_inflist_type min_op(_inflist_type x1, _inflist_type x2) {
+_inflist_type inflist_min_op(_inflist_type x1, _inflist_type x2) {
     return (x1 < x2) ? x1 : x2;
 }
-
-
 
 #endif
