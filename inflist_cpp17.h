@@ -277,7 +277,7 @@ T InfList<T>::foldRange(int start, int end, _il_binop_types binop, T arg) const 
 
     if (!binopFunc) return at(start);
 
-    T ret = (*binopFunc)(at(start), arg);
+    T ret = (*binopFunc)(arg, at(start));
     
     if ((end < start) && (step < 0)) {
         for (int i = start - 1; i >= end; --i) ret = (*binopFunc)(ret, at(i));

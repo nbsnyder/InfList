@@ -3,6 +3,7 @@
 .vscode
 
 # Testing files
+Makefile
 *.dSYM
-*.c
 *.cpp
+inflist
