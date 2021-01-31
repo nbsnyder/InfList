@@ -8,7 +8,7 @@ This library allows you to work with infinite lists in C++. The lists are render
 
 ## Install and use
 
-To use, download one of the inflist files and place it in your build tree. Note: this library is only compatible with C++17 or newer.
+To use, download InfList.h and place it in your build tree. Note: this library is only compatible with C++17 or newer.
 
 ## Usage Examples
 
@@ -18,7 +18,7 @@ To use, download one of the inflist files and place it in your build tree. Note:
 ```C++
 // Calculate pi to various precisions using the Leibniz series and the Wallis product
 #include <iostream>
-#include "inflist_cpp17.h"
+#include "InfList.h"
 
 // Function that calculates the nth term in the Leibniz series
 // The sum of all the terms add up to pi/4

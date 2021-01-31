@@ -6,4 +6,4 @@
 Makefile
 *.dSYM
 *.cpp
-inflist
+InfList
