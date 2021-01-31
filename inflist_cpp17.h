@@ -15,6 +15,8 @@ class InfList {
     // Type declarations
     typedef T(*_il_func)(T); // Function pointer that takes in a T and returns a T (these can be both functions and unary operators)
     typedef T(*_il_binop)(T,T); // Function pointer that takes in two T's and returns a T (binary operator)
+    typedef std::variant<_il_func, const char *> _il_unop_types; // Variant of types that unary operations can be (either function pointer or strings)
+    typedef std::variant<_il_binop, const char *> _il_binop_types; // Variant of types that binary operations can be (either function pointer or strings)
     typedef std::variant<T, _il_func, InfList<T>> _il_types_noop; // Variant of types that functions can take (no operations)
 
 public:
@@ -36,25 +38,19 @@ public:
     inline std::vector<T> first(int num) const;
 
     // Return the result of the `binop` operation applied to the first `num` elements in the list
-    inline T foldFirst(int num, const char *binop) const;
-    inline T foldFirst(int num, const char *binop, T arg) const;
-    inline T foldFirst(int num, _il_binop binop) const;
-    inline T foldFirst(int num, _il_binop binop, T arg) const;
+    inline T foldFirst(int num, _il_binop_types binop) const;
+    inline T foldFirst(int num, _il_binop_types binop, T arg) const;
 
     // Return a vector of the elements in the list between the `start` and `end` indices
     std::vector<T> range(int start, int end) const;
 
     // Return the result of the `binop` operation applied to the elements in the list between the `start` and `end` indices
-    inline T foldRange(int start, int end, const char *binop) const;
-    inline T foldRange(int start, int end, const char *binop, T arg) const;
-    T foldRange(int start, int end, _il_binop binop) const;
-    T foldRange(int start, int end, _il_binop binop, T arg) const;
+    T foldRange(int start, int end, _il_binop_types binop) const;
+    T foldRange(int start, int end, _il_binop_types binop, T arg) const;
 
     // Public methods for applying an operator (either unary or binary) to every element in the list
-    inline void map(_il_func unop);
-    inline void map(const char *unop);
-    inline void map(_il_types_noop obj, _il_binop binop);
-    inline void map(_il_types_noop obj, const char *binop);
+    inline void map(_il_unop_types unop);
+    inline void map(_il_types_noop obj, _il_binop_types binop);
 
     // Operator overloads
     T operator[](int x) const;
@@ -127,26 +123,25 @@ private:
 // Constructors
 
 template<typename T>
-InfList<T>::InfList() : start((T) 0), step((T) 1) {
-    addOp((T) 0);
+InfList<T>::InfList() : start(static_cast<T>(0)), step(static_cast<T>(1)) {
+    addOp(static_cast<T>(0));
 }
 
 template<typename T>
 InfList<T>::InfList(_il_types_noop obj) {
-    if(auto val = std::get_if<InfList<T>>(&obj)) {
+    if (auto val = std::get_if<InfList<T>>(&obj)) {
         this->start = val->start;
         this->step = val->step;
     } else {
-        this->start = (T) 0;
-        this->step = (T) 1;
+        this->start = static_cast<T>(0);
+        this->step = static_cast<T>(1);
     }
 
     addOp(obj);
 }
 
 template<typename T>
-InfList<T>::InfList(_il_types_noop obj, T start, T step) : start(start) {
-    setStep(step);
+InfList<T>::InfList(_il_types_noop obj, T start, T step) : start(start), step(step) {
     addOp(obj);
 }
 
@@ -171,7 +166,7 @@ inline void InfList<T>::setStart(T start) {
 
 template<typename T>
 inline void InfList<T>::setStep(T step) {
-    this->step = (step == 0) ? 1 : step;
+    this->step = step;
 }
 
 
@@ -188,7 +183,7 @@ T InfList<T>::at(int x) const {
                 evalStack.push_back(nums[elem.second]);
                 break;
             case 1: // funcs (function)
-                evalStack.push_back(funcs[elem.second](start + (step * (T) x)));
+                evalStack.push_back(funcs[elem.second](start + (step * static_cast<T>(x))));
                 break;
             case 2: // funcs (unary operator)
                 val1 = evalStack.back();
@@ -220,25 +215,14 @@ inline std::vector<T> InfList<T>::first(int num) const {
 
 
 // Return the result of the `binop` operation applied to the first `num` elements in the list
-
 template<typename T>
-inline T InfList<T>::foldFirst(int num, const char *binop) const {
-    return foldFirst(num, stringToBinop(binop));
+inline T InfList<T>::foldFirst(int num, _il_binop_types binop) const {
+    return foldRange(0, num - 1, binop);
 }
 
 template<typename T>
-inline T InfList<T>::foldFirst(int num, const char* binop, T arg) const {
-    return foldFirst(num, stringToBinop(binop), arg);
-}
-
-template<typename T>
-inline T InfList<T>::foldFirst(int num, _il_binop binop) const {
-    return (num < 1) ? at(0) : foldRange(0, num - 1, binop);
-}
-
-template<typename T>
-inline T InfList<T>::foldFirst(int num, _il_binop binop, T arg) const {
-    return (num < 1) ? at(0) : foldRange(0, num - 1, binop, arg);
+inline T InfList<T>::foldFirst(int num, _il_binop_types binop, T arg) const {
+    return foldRange(0, num - 1, binop, arg);
 }
 
 
@@ -250,10 +234,9 @@ std::vector<T> InfList<T>::range(int start, int end) const {
     std::vector<T> arr;
 
     if ((start >= end) && (step < 0)) {
-        for (int i = start; i >= end; i--) arr.push_back(at(i));
-    }
-    else if ((start <= end) && (step > 0)) {
-        for (int i = start; i <= end; i++) arr.push_back(at(i));
+        for (int i = start; i >= end; --i) arr.push_back(at(i));
+    } else if ((start <= end) && (step > 0)) {
+        for (int i = start; i <= end; ++i) arr.push_back(at(i));
     }
 
     return arr;
@@ -264,65 +247,70 @@ std::vector<T> InfList<T>::range(int start, int end) const {
 // Return the result of the `binop` operation applied to the elements in the list between the `start` and `end` indices
 
 template<typename T>
-inline T InfList<T>::foldRange(int start, int end, const char *binop) const {
-    return foldRange(start, end, stringToBinop(binop));
-}
+T InfList<T>::foldRange(int start, int end, _il_binop_types binop) const {
+    _il_binop binopFunc = (
+        (binop.index() == 0)
+            ? std::get<_il_binop>(binop)
+            : stringToBinop(std::get<const char *>(binop))
+    );
 
-template<typename T>
-inline T InfList<T>::foldRange(int start, int end, const char *binop, T arg) const {
-    return foldRange(start, end, stringToBinop(binop), arg);
-}
-
-template<typename T>
-T InfList<T>::foldRange(int start, int end, _il_binop binop) const {
     T ret = at(start);
 
-    if ((start > end) && (step < 0)) {
-        for (int i = start - 1; i >= end; i--) ret = (*binop)(ret, at(i));
-    }
-    else if ((start < end) && (step > 0)) {
-        for (int i = start + 1; i <= end; i++) ret = (*binop)(ret, at(i));
+    if (binopFunc) {
+        if ((start > end) && (step < 0)) {
+            for (int i = start - 1; i >= end; --i) ret = (*binopFunc)(ret, at(i));
+        } else if ((start < end) && (step > 0)) {
+            for (int i = start + 1; i <= end; ++i) ret = (*binopFunc)(ret, at(i));
+        }
     }
     
     return ret;
 }
 
 template<typename T>
-T InfList<T>::foldRange(int start, int end, _il_binop binop, T arg) const {
-    T ret = (*binop)(at(start), arg);
+T InfList<T>::foldRange(int start, int end, _il_binop_types binop, T arg) const {
+    _il_binop binopFunc = (
+        (binop.index() == 0)
+            ? std::get<_il_binop>(binop)
+            : stringToBinop(std::get<const char *>(binop))
+    );
 
+    if (!binopFunc) return at(start);
+
+    T ret = (*binopFunc)(at(start), arg);
+    
     if ((end < start) && (step < 0)) {
-        for (int i = start - 1; i >= end; i--) ret = (*binop)(ret, at(i));
-    }
-    else if ((start < end) && (step > 0)) {
-        for (int i = start + 1; i <= end; i++) ret = (*binop)(ret, at(i));
+        for (int i = start - 1; i >= end; --i) ret = (*binopFunc)(ret, at(i));
+    } else if ((start < end) && (step > 0)) {
+        for (int i = start + 1; i <= end; ++i) ret = (*binopFunc)(ret, at(i));
     }
     
     return ret;
 }
-
 
 
 // Public methods for applying an operator (either unary or binary) to every element in the list
 
 template<typename T>
-inline void InfList<T>::map(_il_func unop) {
-    addUnOp(unop);
+inline void InfList<T>::map(_il_unop_types unop) {
+    _il_func unopFunc = (
+        (unop.index() == 0)
+            ? std::get<_il_func>(unop)
+            : stringToUnop(std::get<const char *>(unop))
+    );
+
+    if (unopFunc) addUnOp(unopFunc);
 }
 
 template<typename T>
-inline void InfList<T>::map(const char *unop) {
-    addUnOp(stringToUnop(unop));
-}
+inline void InfList<T>::map(_il_types_noop obj, _il_binop_types binop) {
+    _il_binop binopFunc = (
+        (binop.index() == 0)
+            ? std::get<_il_binop>(binop)
+            : stringToBinop(std::get<const char *>(binop))
+    );
 
-template<typename T>
-inline void InfList<T>::map(_il_types_noop obj, _il_binop binop) {
-    addBinOp(obj, binop);
-}
-
-template<typename T>
-inline void InfList<T>::map(_il_types_noop obj, const char *binop) {
-    addBinOp(obj, stringToBinop(binop));
+    if (binopFunc) addBinOp(binopFunc);
 }
 
 
@@ -510,11 +498,11 @@ const InfList<T>& InfList<T>::addBinOp(_il_types_noop obj, _il_binop func_op) {
 
 template<typename T>
 void InfList<T>::addOp(_il_types_noop obj) {
-    if(auto val = std::get_if<T>(&obj)) {
+    if (auto val = std::get_if<T>(&obj)) {
         addOp_num(*val);
-    } else if(auto val = std::get_if<_il_func>(&obj)) {
+    } else if (auto val = std::get_if<_il_func>(&obj)) {
         addOp_func(*val);
-    } else if(auto val = std::get_if<InfList<T>>(&obj)) {
+    } else if (auto val = std::get_if<InfList<T>>(&obj)) {
         addOp_list(*val);
     }
 }
